@@ -4,8 +4,9 @@ const { joiUserSchema } = require("../Models/validationSchema");
 const jwt = require("jsonwebtoken");
 const products = require("../Models/ProductSchema");
 const mongoose = require("mongoose");
+// const stripe=require("stripe")(process.env.stripe_secretkey)
 
-mongoose.connect("mongodb://localhost:27017/Backend");
+// let sValue=[]
 
 module.exports = {
   //userregister
@@ -19,6 +20,14 @@ module.exports = {
         message: "Invalid user input.Please check data",
       });
     }
+    const existingUser = await User.findOne({ name: name });
+
+    if (existingUser) {
+      return res.status(400).json({
+        status: "error",
+        message: "User with this name already exists",
+      });
+    }
     await User.create({
       name: name,
       email: email,
@@ -28,7 +37,7 @@ module.exports = {
     });
     res
       .status(201)
-      .json({ status: "status", messaga: "user registration Successsfull" });
+      .json({ status: "status", message: "user registration Successsfull" });
     console.log(username, "hhhhh");
   },
 

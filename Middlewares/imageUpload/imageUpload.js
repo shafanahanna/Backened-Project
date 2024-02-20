@@ -15,7 +15,7 @@ cloudinary.config({
   api_key: process.env.api_key,
   api_secret: process.env.api_secret,
 });
-//  console.log(cloudinary);
+// console.log(cloudinary);
 
 const imageUpload = (req, res, next) => {
   upload.single("image")(req, res, async (err) => {
@@ -40,6 +40,6 @@ const imageUpload = (req, res, next) => {
     }
   });
 };
-// console.log(imageUpload);
+// console.log(imageUpload, "hloo");
 
 module.exports = imageUpload;
