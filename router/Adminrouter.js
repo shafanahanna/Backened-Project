@@ -19,6 +19,8 @@ router
   .get("/allproducts", tryCatchMiddleware(admin.allProducts))
   .delete("/deleteproduct/:id", tryCatchMiddleware(admin.deleteProduct))
   .get("/productbyid/:id", tryCatchMiddleware(adminController.productById))
-  .put("/updateproduct/:id", tryCatchMiddleware(admin.updateProduct));
+  .put("/updateproduct/:id", tryCatchMiddleware(admin.updateProduct))
+  .get("/orders", tryCatchMiddleware(admin.AdminOrderDetails))
+  .get("/revenuestatus", tryCatchMiddleware(admin.TotalRevenueStatus));
 
 module.exports = router;

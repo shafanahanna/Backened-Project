@@ -13,9 +13,15 @@ router
   .get("/products/:id", tryCatchMiddleware(userController.productById))
   .post("/addtocart/:id", tryCatchMiddleware(userController.addToCart))
   .get("/viewcart/:id", tryCatchMiddleware(userController.viewCartProduct))
-  .post("/addtowishlist/:id", tryCatchMiddleware(userController.addtowishlist))
-  .post("/addtowishlist/:id", tryCatchMiddleware(userController.addtowishlist))
+  .post("/addtowishlist/:id", tryCatchMiddleware(userController.addwishlist))
   .get("/showwishlist/:id", tryCatchMiddleware(userController.showWishlist))
-  .delete("/deletewishlist", tryCatchMiddleware(userController.deletewishlist));
+  .delete(
+    "/deletewishlist/:id",
+    tryCatchMiddleware(userController.deletewishlist)
+  )
+  .post("/:id/payment", tryCatchMiddleware(userController.payment))
+  .get("/payment/success", tryCatchMiddleware(userController.success))
+  .post("/payment/cancel", tryCatchMiddleware(userController.PaymentCancel))
+  .get("/:id/orders", tryCatchMiddleware(userController.OrderDetails));
 
 module.exports = router;

@@ -4,6 +4,7 @@ const Users = require("../Models/UserSchema");
 const UserSchema = require("../Models/UserSchema");
 const products = require("../Models/ProductSchema");
 const { joiProductSchema } = require("../Models/validationSchema");
+const orderSchema = require("../Models/OrderSchema");
 
 module.exports = {
   login: async (req, res) => {
@@ -160,26 +161,79 @@ module.exports = {
   },
 
   //update product
-
   updateProduct: async (req, res) => {
-    const { value, error } = joiProductSchema.validate(req.body);
-    if (error) {
-      return res.status(401).send({ message: error.details[0].message });
-    }
-    const { id, title, description, price, image, category } = value;
-    const product = await products.findOne();
+    try {
+      const { value, error } = joiProductSchema.validate(req.body);
 
-    if (!product) {
+      const { id, title, description, price, image, category } = value;
+      console.log(title);
+      if (error) {
+        return res
+          .status(401)
+          .json({ status: "error", message: error.details[0].message });
+      }
+
+      const updatedProduct = await products.findByIdAndUpdate(
+        id,
+        { $set: { title, description, price, image, category } },
+        { new: true }
+      );
+      console.log(updatedProduct);
+
+      if (updatedProduct) {
+        const updatedProducts = await products.findById(id);
+        return res.status(200).json({
+          status: "success",
+          message: "Successfully updated the product.",
+          data: updatedProducts,
+        });
+      } else {
+        return res
+          .status(404)
+          .json({ status: "error", message: "Product not found" });
+      }
+    } catch (error) {
+      console.error("Error updating product:", error);
       return res
-        .send(404)
-        .json({ status: "failed", message: "product not found" });
+        .status(500)
+        .json({ status: "error", message: "Internal Server Error" });
     }
-    await products.findOneAndUpdate(
-      { _id: id },
-      { title, description, price, image, category }
-    );
-    res
-      .status(200)
-      .json({ status: "success", message: "product updated successfully" });
+  },
+  //Order Details
+
+  AdminOrderDetails: async (req, res) => {
+    const products = await orderSchema.find();
+    if (products.length === 0) {
+      return res
+        .status(404)
+        .json({ status: "error", message: " No order details" });
+    }
+    res.status(200).json({
+      status: "success",
+      message: "order details succeesfully fetched",
+      order_data: products,
+    });
+  },
+
+  // Total revenue Generated
+
+  TotalRevenueStatus: async (req, res) => {
+    const totalRevenue = await orderSchema.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalProduct: { $sum: { $size: "$products" } },
+          totalRevenue: { $sum: "$total_amount" },
+        },
+      },
+    ]);
+    if (totalRevenue.length > 0) {
+      res.status(200).json({ status: "success", data: totalRevenue[0] });
+    } else {
+      res.status(200).json({
+        status: "success",
+        data: { totalProduct: 0, totalRevenue: 0 },
+      });
+    }
   },
 };
