@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 const products = require("../Models/ProductSchema");
 const mongoose = require("mongoose");
 const UserSchema = require("../Models/UserSchema");
-const order = require("../Models/OrderSchema");
 
 const stripe = require("stripe")(process.env.stripe_secretkey);
 
@@ -41,7 +40,7 @@ module.exports = {
     res
       .status(201)
       .json({ status: "status", message: "user registration Successsfull" });
-    console.log(username, "hhhhh");
+    // console.log(username, "hhhhh");
   },
 
   //userlogin
@@ -257,9 +256,9 @@ module.exports = {
   // Payment Section
 
   payment: async (req, res) => {
-    const userid = req.params.id;
+    const userId = req.params.id;
 
-    const user = await User.findOne({ _id: userid }).populate("cart");
+    const user = await User.findOne({ _id: userId }).populate("cart");
     console.log(user);
 
     if (!user) {
@@ -292,7 +291,7 @@ module.exports = {
       payment_method_types: ["card"],
       line_items: lineitems,
       mode: "payment",
-      success_url: "http://localhost:4008/api/users/payment/success",
+      success_url: "http://localhost:3001/api/users/payment/success",
     });
     if (!session) {
       return res.json({
@@ -301,49 +300,15 @@ module.exports = {
       });
     }
     sValue = {
-      userid,
+      userId,
       user,
       session,
     };
+    // console.log(sValue, "svaluw");
     res.status(200).json({
       status: "success",
       message: "stripe payment  session is created",
       url: session.url,
     });
-  },
-
-  success: async (req, res) => {
-    const { id, user, session } = sValue;
-
-    const userId = user._id;
-    const cartItems = user.cart;
-
-    const orders = await order.create({
-      userId: id,
-      products: cartItems.map(
-        (value) => new mongoose.Types.objectId(value._id)
-      ),
-      order_id: session.id,
-      payment_id: `demo ${Date.now()}`,
-      total_amount: session.amount_total / 100,
-    });
-    console.log("orderr", orders);
-
-    if (!orders) {
-      return res.json({ message: "error occured while inputing to orderDB" });
-    }
-
-    const userUpdate = await User.updateOne(
-      { _id: userId },
-      { $push: { orders: order_id }, $set: { cart: [] } },
-      { new: true }
-    );
-
-    if (userUpdate) {
-      res.status(200).json({
-        status: "success",
-        message: "failed to update user data",
-      });
-    }
   },
 };
