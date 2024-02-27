@@ -24,7 +24,7 @@ app.use("/api/users", userRouter);
 app.use("/api/admin", adminRouter);
 app.listen(port, (err) => {
   if (err) {
-    console.log(`eerror detected ${err}`);
+    console.log(`error detected ${err}`);
   }
   console.log(`server running on ${port}`);
 });

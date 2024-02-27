@@ -7,7 +7,7 @@ const verifyToken = require("../Middlewares/Userauth");
 router
 
   .post("/register", tryCatchMiddleware(userController.userRegister))
-  .post("/userlogin", tryCatchMiddleware(userController.userLogin))
+  .get("/userlogin", tryCatchMiddleware(userController.userLogin))
   .use(verifyToken)
   .get("/viewproduct", tryCatchMiddleware(userController.viewProduct))
   .get("/products/:id", tryCatchMiddleware(userController.productById))
@@ -19,6 +19,7 @@ router
     "/deletewishlist/:id",
     tryCatchMiddleware(userController.deletewishlist)
   )
-  .post("/:id/payment", tryCatchMiddleware(userController.payment));
+  .post("/:id/payment", tryCatchMiddleware(userController.payment))
+  .get("/payment/success", tryCatchMiddleware(userController.success));
 
 module.exports = router;

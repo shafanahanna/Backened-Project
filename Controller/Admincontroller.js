@@ -198,4 +198,17 @@ module.exports = {
         .json({ status: "error", message: "Internal Server Error" });
     }
   },
+  orderDetails: async (req, res) => {
+    const products = await this.order.find();
+    if (products.length === 0) {
+      return res.status(200).json({ message: "no products" });
+    }
+    res
+      .status(200)
+      .json({
+        status: "success",
+        message: "successfully fetched order details",
+        products,
+      });
+  },
 };

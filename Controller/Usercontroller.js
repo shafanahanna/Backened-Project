@@ -3,7 +3,7 @@ const User = require("../Models/UserSchema");
 const { joiUserSchema } = require("../Models/validationSchema");
 const jwt = require("jsonwebtoken");
 const products = require("../Models/ProductSchema");
-const mongoose = require("mongoose");
+const Order = require("../Models/orderSchema");
 const UserSchema = require("../Models/UserSchema");
 
 const stripe = require("stripe")(process.env.stripe_secretkey);
@@ -133,6 +133,54 @@ module.exports = {
       status: "success",
       message: "successfully product was added to cart",
     });
+  },
+
+  updateCartItemQuantity: async (req, res) => {
+    const userId = req.params.id;
+    const { id, quantityChange } = req.body;
+    // console.log(req.body,"hhhhhhhh");
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const cartItem = user.cart.id(id);
+    if (!cartItem) {
+      return res.status(404).json({ message: "cart item not found" });
+    }
+
+    cartItem.quantity += quantityChange;
+
+    if (cartItem.quantity > 0) {
+      await user.save();
+    }
+    res.status(200).json({
+      status: "success",
+      message: "cart item quantity updated",
+      data: user.cart,
+    });
+  },
+  removeCartProducts: async (req, res) => {
+    const userId = req.params.id;
+    const itemId = req.params.itemId;
+    if (!itemId) {
+      return res.status(404).json({ message: "product not found" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+    }
+    const result = await User.updateOne(
+      { _id: userId },
+      { $pull: { cart: { productsId: itemId } } }
+    );
+    if (result.modifiedCount > 0) {
+      // console.log("item removed sucessfully");
+      res
+        .status(200)
+        .json({ message: "product removed successfully", data: result });
+    } else {
+      console.log("item not found in the  cart");
+    }
   },
 
   //view the added product in cart
@@ -310,5 +358,51 @@ module.exports = {
       message: "stripe payment  session is created",
       url: session.url,
     });
+  },
+  success: async (req, res) => {
+    try {
+      const { id, user, session } = sValue;
+      // console.log(sValue,"svalue");
+      const userId = user._id;
+      const cartItems = user.cart;
+      const productId = cartItems.map((item) => item.productsId);
+
+      const orders = await Order.create({
+        userId: id,
+        products: productId,
+        order_id: session.id,
+        payment_id: `demo ${Date.now()}`,
+        total_amount: session.amount_total / 100,
+      });
+      if (!orders) {
+        return res.json({
+          status: "failure",
+          message: "Error detected while inputting to order DB",
+        });
+      }
+
+      const orderId = orders._id;
+      const userUpdate = await User.updateOne(
+        { _id: userId },
+        { $push: { orders: orderId }, $set: { cart: [] } },
+        { new: true }
+      );
+      if (userUpdate.nModified === 1) {
+        res
+          .status(200)
+          .json({ status: "Success", message: "payment successfull" });
+      } else {
+        res
+          .status(500)
+          .json({ status: "Error", message: "Failed to update user data" });
+      }
+    } catch (error) {
+      // console.log(error);
+      res.status(500).json({
+        status: "Error",
+        message: "An error occured",
+        error_message: error.message,
+      });
+    }
   },
 };
