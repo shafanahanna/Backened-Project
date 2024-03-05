@@ -4,7 +4,7 @@ const { joiUserSchema } = require("../Models/validationSchema");
 const jwt = require("jsonwebtoken");
 const products = require("../Models/ProductSchema");
 const Order = require("../Models/orderSchema");
-const UserSchema = require("../Models/UserSchema");
+const { default: mongoose } = require("mongoose");
 
 const stripe = require("stripe")(process.env.stripe_secretkey);
 
@@ -359,50 +359,88 @@ module.exports = {
       url: session.url,
     });
   },
+  //Success
+
   success: async (req, res) => {
-    try {
-      const { id, user, session } = sValue;
-      // console.log(sValue,"svalue");
-      const userId = user._id;
-      const cartItems = user.cart;
-      const productId = cartItems.map((item) => item.productsId);
+    const { userId, user, session } = sValue;
 
-      const orders = await Order.create({
-        userId: id,
-        products: productId,
-        order_id: session.id,
-        payment_id: `demo ${Date.now()}`,
-        total_amount: session.amount_total / 100,
-      });
-      if (!orders) {
-        return res.json({
-          status: "failure",
-          message: "Error detected while inputting to order DB",
-        });
-      }
+    console.log(sValue, "hiii");
+    console.log(user);
+    // const userid =  userId;
 
-      const orderId = orders._id;
-      const userUpdate = await User.updateOne(
-        { _id: userId },
-        { $push: { orders: orderId }, $set: { cart: [] } },
-        { new: true }
-      );
-      if (userUpdate.nModified === 1) {
-        res
-          .status(200)
-          .json({ status: "Success", message: "payment successfull" });
-      } else {
-        res
-          .status(500)
-          .json({ status: "Error", message: "Failed to update user data" });
-      }
-    } catch (error) {
-      // console.log(error);
-      res.status(500).json({
-        status: "Error",
-        message: "An error occured",
-        error_message: error.message,
+    const cartItems = user.cart;
+    // console.log(cartItems);
+
+    const orders = await Order.create({
+      userId: userId,
+      products: cartItems.map(
+        (value) => new mongoose.Types.ObjectId(value._id)
+      ),
+      order_id: session.id,
+      payment_id: `demo ${Date.now()}`,
+      total_amount: session.amount_total / 100,
+    });
+
+    if (!orders) {
+      return res.json({
+        status: "failure",
+        message: "Error occured while inputting to order DB",
       });
     }
+
+    const orderId = orders._id;
+
+    const userUpdate = await User.findOneAndUpdate(
+      { _id: userId },
+      {
+        $push: { orders: orderId },
+        $set: { cart: [] },
+      },
+      { new: true }
+    );
+
+    console.log(userUpdate);
+
+    if (userUpdate) {
+      res.status(200).json({
+        status: "success",
+        message: "payment successful",
+      });
+    } else {
+      res.status(500).json({
+        status: "error",
+        message: "Failed to update user data",
+      });
+    }
+  },
+  orderDetails: async (req, res) => {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId).populate("orders", {
+      strictpopulate: false,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "user not found",
+      });
+    }
+    const orderProducts = user.orders;
+
+    if (orderProducts.length === 0) {
+      return res.status(200).json({
+        message: "you don't have any product orders",
+        data: [],
+      });
+    }
+    const orderWithProducts = await Order.find({
+      _id: { $in: orderProducts },
+    }).populate("products");
+
+    res.status(200).json({
+      message: "ordered Products Details found",
+      data: orderWithProducts,
+    });
   },
 };

@@ -20,6 +20,7 @@ router
     tryCatchMiddleware(userController.deletewishlist)
   )
   .post("/:id/payment", tryCatchMiddleware(userController.payment))
-  .get("/payment/success", tryCatchMiddleware(userController.success));
+  .post("/payment/success", tryCatchMiddleware(userController.success))
+  .get("/order/:id", tryCatchMiddleware(userController.orderDetails));
 
 module.exports = router;
