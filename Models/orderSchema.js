@@ -12,4 +12,4 @@ const orderSchema = mongoose.Schema(
   { strictpopulate: false }
 );
 
-module.exports = mongoose.model("Orders", orderSchema);
+module.exports = mongoose.model("orders", orderSchema);

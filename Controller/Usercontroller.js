@@ -316,8 +316,8 @@ module.exports = {
     }
     const cartProducts = user.cart;
     if (cartProducts.length === 0) {
-      return res.status(200).json({
-        status: "success",
+      return res.status(404).json({
+        status: "not found",
         message: "cart is empty",
         data: [],
       });
